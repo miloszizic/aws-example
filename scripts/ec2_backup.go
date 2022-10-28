@@ -1,4 +1,4 @@
-// Added comment to test action
+// Added comment to test action, will remove later
 package main
 
 import (
