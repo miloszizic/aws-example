@@ -30,7 +30,7 @@ workflows:
   - tag_query: ""
     plan:
       - type: run
-        cmd: ["./debug.sh"]
+        cmd: ["aws sts get-caller-identity"]
         run_on: always
       - type: init
       - type: plan
