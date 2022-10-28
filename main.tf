@@ -401,14 +401,12 @@ module "asg_backend_private" {
 # Lambda module for EC2 instances backups in VPC
 #
 module "lambda_ec2_backup" {
-  depends_on = [null_resource.upload_to_s3]
   source     = "terraform-aws-modules/lambda/aws"
 
   function_name  = "backup_ec2_lambda"
   create_package = false
   description = "Lambda function for EC2 instances backups"
   handler                  = "scripts/${var.go_backup_filename}"
-#  handler                  = var.go_backup_filename
   store_on_s3              = true
   role_name                = "lambda_ami_backup_role"
   runtime                  = "go1.x"
@@ -449,7 +447,6 @@ module "lambda_ec2_cleanup" {
   source = "terraform-aws-modules/lambda/aws"
 
   function_name  = "cleanup_ec2_lambda"
-#  source_path    = var.py_cleanup_filename
   description    = "Lambda function for EC2 instances cleanup"
   handler        = "${var.py_cleanup_filename}.lambda_handler"
   lambda_role    = module.lambda_ec2_backup.lambda_role_arn
@@ -505,29 +502,29 @@ module "eventbridge" {
   }
 }
 
-resource "null_resource" "lambda_go_build" {
-  triggers = {
-	build = sha1(file("scripts/${var.go_backup_filename}.go"))
-  }
-
-  provisioner "local-exec" {
-	command = "GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o scripts/${var.go_backup_filename} scripts/${var.go_backup_filename}.go"
-  }
-  provisioner "local-exec" {
-	command = "zip scripts/${var.go_backup_filename}.zip scripts/${var.go_backup_filename}"
-  }
-  provisioner "local-exec" {
-	command = "zip scripts/${var.py_cleanup_filename}.zip scripts/${var.py_cleanup_filename}.py"
-  }
-}
-
-
-resource "null_resource" "upload_to_s3" {
-  depends_on = [null_resource.lambda_go_build]
-  provisioner "local-exec" {
-	command = "aws s3 cp scripts/${var.go_backup_filename}.zip s3://${module.lambda_s3.s3_bucket_id}/scripts/${var.go_backup_filename}.zip"
-  }
-  provisioner "local-exec" {
-	command = "aws s3 cp scripts/${var.py_cleanup_filename}.zip s3://${module.lambda_s3.s3_bucket_id}/scripts/${var.py_cleanup_filename}.zip"
-  }
-}
+#resource "null_resource" "lambda_go_build" {
+#  triggers = {
+#	build = sha1(file("scripts/${var.go_backup_filename}.go"))
+#  }
+#
+#  provisioner "local-exec" {
+#	command = "GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o scripts/${var.go_backup_filename} scripts/${var.go_backup_filename}.go"
+#  }
+#  provisioner "local-exec" {
+#	command = "zip scripts/${var.go_backup_filename}.zip scripts/${var.go_backup_filename}"
+#  }
+#  provisioner "local-exec" {
+#	command = "zip scripts/${var.py_cleanup_filename}.zip scripts/${var.py_cleanup_filename}.py"
+#  }
+#}
+#
+#
+#resource "null_resource" "upload_to_s3" {
+#  depends_on = [null_resource.lambda_go_build]
+#  provisioner "local-exec" {
+#	command = "aws s3 cp scripts/${var.go_backup_filename}.zip s3://${module.lambda_s3.s3_bucket_id}/scripts/${var.go_backup_filename}.zip"
+#  }
+#  provisioner "local-exec" {
+#	command = "aws s3 cp scripts/${var.py_cleanup_filename}.zip s3://${module.lambda_s3.s3_bucket_id}/scripts/${var.py_cleanup_filename}.zip"
+#  }
+#}
