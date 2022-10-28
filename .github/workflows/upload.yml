@@ -4,7 +4,7 @@ name: compile/zip and upload to S3
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
     paths: 'scripts/**'
 #  pull_request:
 #    branches: [ "main" ]
