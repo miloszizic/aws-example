@@ -19,18 +19,10 @@ on:
         description: 'API Base URL'
 jobs:
   terrateam:
-    permissions: # Required to pass credentials to the Terrateam action
-      id-token: write
-      contents: read
     runs-on: ubuntu-latest
     timeout-minutes: 1440
     name: Terrateam Action
     steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE}} # REPLACE (format: arn:aws:iam::AWS_ACCOUNT_NUMBER:role/TERRATEAM_ROLE_NAME)
-          aws-region: us-east-1
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
