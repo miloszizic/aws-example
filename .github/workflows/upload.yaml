@@ -68,10 +68,9 @@ jobs:
       run: aws sts get-caller-identity
       
     - name: upload Zip
-      run: |
-        ls      
-        aws s3 cp ec2_backup.zip ${{ secrets.S3_BUCKET }}
-        aws s3 cp ec2_cleanup.zip ${{ secrets.S3_BUCKET }}
+      run: |    
+        aws s3 cp ec2_backup.zip ${{ secrets.S3_BUCKET }}/scripts/
+        aws s3 cp ec2_cleanup.zip ${{ secrets.S3_BUCKET }}/scripts/
         
     - name: List S3
       run: aws s3 ls ${{ secrets.S3_BUCKET }} --recursive --human-readable --summarize
