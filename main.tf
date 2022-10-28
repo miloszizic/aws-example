@@ -447,7 +447,7 @@ module "lambda_ec2_cleanup" {
   source = "terraform-aws-modules/lambda/aws"
 
   function_name  = "cleanup_ec2_lambda"
-  description    = "Lambda function for EC2 instances cleanup"
+  description    = "Lambda function for EC2 instances cleanup of old AMIs"
   handler        = "${var.py_cleanup_filename}.lambda_handler"
   lambda_role    = module.lambda_ec2_backup.lambda_role_arn
   create_package = false
@@ -459,7 +459,6 @@ module "lambda_ec2_cleanup" {
 	bucket = module.lambda_s3.s3_bucket_id
 	key    = "scripts/${var.py_cleanup_filename}.zip"
   }
-
 
   create_current_version_allowed_triggers = false
   allowed_triggers = {
