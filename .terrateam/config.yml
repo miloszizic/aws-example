@@ -29,12 +29,9 @@ hooks:
 workflows:
   - tag_query: ""
     plan:
+      - type: run
+        cmd: ["./debug.sh"]
+        run_on: always
       - type: init
-        extra_args: ["-var-file=test.tfvars -backend-config="test_backend.tfvars"]
       - type: plan
-        extra_args: ["-var-file=test.tfvars"]
-    apply:
-      - type: init
-      - type: apply
-        extra_args: ["-var-file=test.tfvars"]
 dirs:
