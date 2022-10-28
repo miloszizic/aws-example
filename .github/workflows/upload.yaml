@@ -1,5 +1,6 @@
-#
-name: Zip to S3
+# This action will update the latest code change in folder scripts to the S3
+# bucket to be used by the Lambda function
+name: compile/zip and upload to S3
 
 on:
   push:
@@ -8,69 +9,66 @@ on:
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
-    
+
 permissions:
   id-token: write # required to use OIDC authentication
-  contents: read # required to checkout the code from the repo
-  
+  contents: read # required to check out the code from the repo
+
 
 jobs:
   upload:
-    name: Build-zip-upload
+    name: setting up the environment
     runs-on: ubuntu-latest
-    env: 
+    env:
       AWS_REGION: us-east-1
       BASE_PATH: scripts
       PY_FILENAME: ec2_cleanup.py
-      
-      
+
+
     steps:
     - uses: actions/checkout@v3
 
-    - name: Set up Go
+    - name: Set up Go environment
       uses: actions/setup-go@v3
       with:
-        go-version: 1.18
+        go-version: 1.19
 
-    - name: Build Go
+    - name: Build Go binary
       run: |
         cd $BASE_PATH
         go mod init ec2_backup
-        go mod tidy   
+        go mod tidy
         GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build
-        
-    - name: Create Folders
-      run: | 
+
+    - name: Create folders for zip
+      run: |
         cd $BASE_PATH
         mkdir ec2_backup_go
         mv ec2_backup ec2_backup_go/
         mkdir ec2_cleanup
         mv $PY_FILENAME ec2_cleanup/
-        
-    - name: Zip Go Build
+
+    - name: Zip Go binary
       uses: montudor/action-zip@v1
       with:
         args: zip -qq -r ec2_backup.zip scripts/ec2_backup_go
-    
-    - name: Zip python file
+
+    - name: Zip Python file
       uses: montudor/action-zip@v1
       with:
         args: zip -qq -r ec2_cleanup.zip scripts/ec2_cleanup
-      
-    - name: configure AWS credentials
+
+    - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
         role-to-assume: ${{ secrets.AWS_ROLE_S3 }}
         role-duration-seconds: 900
         aws-region: ${{ env.AWS_REGION }}
-        
-    - name: Test AWS Creds
-      run: aws sts get-caller-identity
-      
-    - name: upload Zip
-      run: |    
+
+    - name: Upload Zipped files to S3
+      run: |
         aws s3 cp ec2_backup.zip ${{ secrets.S3_BUCKET }}/scripts/
         aws s3 cp ec2_cleanup.zip ${{ secrets.S3_BUCKET }}/scripts/
-        
+
     - name: List S3
-      run: aws s3 ls ${{ secrets.S3_BUCKET }} --recursive --human-readable --summarize
+      run: aws s3 ls ${{ secrets.S3_BUCKET }}/scripts --recursive --human-readable --summarize
