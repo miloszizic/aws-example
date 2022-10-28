@@ -33,5 +33,7 @@ workflows:
         cmd: ["aws sts get-caller-identity"]
         run_on: always
       - type: init
+        extra_args: ["-var-file=test.tfvars"]
       - type: plan
+        extra_args: ["-var-file=test.tfvars"]
 dirs:
