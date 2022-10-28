@@ -32,8 +32,4 @@ workflows:
       - type: init
       - type: plan
         extra_args: ["-var-file=test.tfvars"]
-    apply:
-      - type: init
-      - type: apply
-        extra_args: ["-var-file=test.tfvars"]
 dirs:
