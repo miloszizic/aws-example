@@ -31,6 +31,8 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::062791981969:role/github-poc-demo # REPLACE (format: arn:aws:iam::AWS_ACCOUNT_NUMBER:role/TERRATEAM_ROLE_NAME)
           aws-region: us-east-1
+      - name: Check role
+        run: aws sts get-caller-identity
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
