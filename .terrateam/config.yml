@@ -30,12 +30,10 @@ workflows:
   - tag_query: ""
     plan:
       - type: init
-        extra_args: ["-var-file=test.tfvars"]
       - type: plan
         extra_args: ["-var-file=test.tfvars"]
     apply:
       - type: init
-        extra_args: ["-var-file=test.tfvars"]
       - type: apply
         extra_args: ["-var-file=test.tfvars"]
 dirs:
