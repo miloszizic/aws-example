@@ -69,6 +69,7 @@ jobs:
       
     - name: upload Zip
       run: |
+        ls      
         aws s3 cp ec2_backup.zip ${{ secrets.S3_BUCKET }}
         aws s3 cp ec2_cleanup.zip ${{ secrets.S3_BUCKET }}
         
