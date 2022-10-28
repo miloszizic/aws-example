@@ -460,7 +460,6 @@ module "lambda_ec2_cleanup" {
 	key    = "scripts/${var.py_cleanup_filename}.zip"
   }
 
-
   create_current_version_allowed_triggers = false
   allowed_triggers = {
     ScanAmiRule = {
