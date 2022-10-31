@@ -23,5 +23,6 @@ Scripts used for Lambda:
 
 #### TODO:
 * Add more infrastructure to get more hands-on experience with AWS resources.
+* Add aquasecurity/tfsec
 * Use Terragrunt to make the project more modular and DRY.
 * Add more documentation.
