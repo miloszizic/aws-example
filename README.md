@@ -53,7 +53,7 @@ Scripts used for Lambda:
   It also needs trust policy as the **_AWS_ROLE_**.
 
   * **_S3_BUCKET_** - This is the name of the S3 bucket that will be used to store the lambda functions.
-* Now every time you make a PR to the master breanch, Terrateam will run a plan and apply on comment `terraform apply` in PR . Changes in the `scripts` directory will be compiled and uploaded to S3 with other GitHub action.
+* Now every time you make a PR to the master breanch, Terrateam will run a plan and apply on comment `terrateam apply` in PR . Changes in the `scripts` directory will be compiled and uploaded to S3 with other GitHub action.
 
 **_Note_** : Only changes to terraform code will trigger Terrateam. Changes to `scripts` will only trigger GitHub action.
 
