@@ -134,3 +134,15 @@ variable "github_federated_identity" {
   default = ""
   type    = string
 }
+variable "create_db" {
+  default = false
+  type    = bool
+}
+variable "create_db_replica" {
+  default = false
+  type    = bool
+}
+variable "create_bastion" {
+  default = false
+  type    = bool
+}

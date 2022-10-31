@@ -49,36 +49,39 @@ module "lambda_s3" {
   tags = local.general_tags
 }
 
-# commented out for now cost savings after testing
-# Bastian Security group Module #
-#module "bastion-sg" {
-#  source = "terraform-aws-modules/security-group/aws"
-#
-#  name                = "${var.env_name}-bastiansg"
-#  description         = "Security group for web app"
-#  depends_on          = [module.vpc]
-#  vpc_id              = module.vpc.vpc_id
-#  ingress_cidr_blocks = ["0.0.0.0/0"]
-#  ingress_rules       = ["ssh-tcp"]
-#  egress_rules        = ["all-all"]
-#  tags = local.general_tags
-#
-#}
-#### EC2-Instance Module ####
-#module "ec2_bastion_instance" {
-#  source  = "terraform-aws-modules/ec2-instance/aws"
-#  version = "~> 4.0"
-#
-#  name = "${var.env_name}-bastion-host"
-#
-#  ami                    = var.ami
-#  instance_type          = var.instance_type
-#  vpc_security_group_ids = [module.bastion-sg.security_group_id]
-#  subnet_id              = element(module.vpc.public_subnets, 0)
-#  key_name               = var.key_pair
-#
-#  tags = local.general_tags
-#}
+
+#Bastian Security group Module #
+module "bastion-sg" {
+  source = "terraform-aws-modules/security-group/aws"
+
+
+  count               = var.create_bastion ? 1 : 0
+  name                = "${var.env_name}-bastiansg"
+  description         = "Security group for web app"
+  depends_on          = [module.vpc]
+  vpc_id              = module.vpc.vpc_id
+  ingress_cidr_blocks = ["0.0.0.0/0"]
+  ingress_rules       = ["ssh-tcp"]
+  egress_rules        = ["all-all"]
+  tags                = local.general_tags
+
+}
+### EC2-Instance Module ####
+module "ec2_bastion_instance" {
+  source  = "terraform-aws-modules/ec2-instance/aws"
+  version = "~> 4.0"
+
+  name = "${var.env_name}-bastion-host"
+
+  count                  = var.create_bastion ? 1 : 0
+  ami                    = var.ami
+  instance_type          = var.instance_type
+  vpc_security_group_ids = [module.bastion-sg.security_group_id]
+  subnet_id              = element(module.vpc.public_subnets, 0)
+  key_name               = var.key_pair
+
+  tags = local.general_tags
+}
 module "sg_web_public" {
   source       = "terraform-aws-modules/security-group/aws"
   egress_rules = ["all-all"]
@@ -354,59 +357,61 @@ module "asg_backend_private" {
     }
   }
 }
-# commented out for cost savings after testing
-### DB module ###
-#module "db_master" {
-#  source = "terraform-aws-modules/rds/aws"
-#
-#  identifier             = "${var.env_name}-master"
-#  subnet_ids             = module.vpc.private_subnets
-#  vpc_security_group_ids = [module.sg_backend_db_private.security_group_id]
-#  engine                 = local.engine
-#  engine_version         = local.engine_version
-#  major_engine_version   = local.major_engine_version
-#  family                 = local.family         #DB parameter group
-#  instance_class         = local.instance_class #DB option group
-#  create_db_subnet_group = true                 #DB subnet group
-#
-#  allocated_storage       = local.allocated_storage
-#  backup_retention_period = 1 #Backups are required in order to create a replica
-#  skip_final_snapshot     = true
-#  deletion_protection     = false
-#
-#  db_name  = "masterdb"
-#  username = "poc"
-#  password = "POCDBpocdb"
-#  tags     = local.general_tags
-#
-#}
-#
-#### Replicate DB module ###
-#module "db_replica" {
-#  source = "terraform-aws-modules/rds/aws"
-#
-#  identifier             = "${var.env_name}-replica"
-#  replicate_source_db    = module.db_master.db_instance_id
-#  engine                 = local.engine
-#  major_engine_version   = local.major_engine_version
-#  family                 = local.family         #DB parameter group
-#  instance_class         = local.instance_class #DB option group
-#  allocated_storage      = local.allocated_storage
-#  deletion_protection    = false
-#  skip_final_snapshot    = true
-#  subnet_ids             = module.vpc.private_subnets
-#  vpc_security_group_ids = [module.sg_backend_db_private.security_group_id]
-#  tags                   = local.general_tags
-#}
 
-# Lambda module for EC2 instances backups in VPC
-#
+## DB module ###
+module "db_master" {
+  source = "terraform-aws-modules/rds/aws"
+
+  count                  = var.create_db ? 1 : 0
+  identifier             = "${var.env_name}-master"
+  subnet_ids             = module.vpc.private_subnets
+  vpc_security_group_ids = [module.sg_backend_db_private.security_group_id]
+  engine                 = local.engine
+  engine_version         = local.engine_version
+  major_engine_version   = local.major_engine_version
+  family                 = local.family         #DB parameter group
+  instance_class         = local.instance_class #DB option group
+  create_db_subnet_group = true                 #DB subnet group
+
+  allocated_storage       = local.allocated_storage
+  backup_retention_period = 1 #Backups are required in order to create a replica
+  skip_final_snapshot     = true
+  deletion_protection     = false
+
+  db_name  = "masterdb"
+  username = "poc"
+  password = "POCDBpocdb"
+  tags     = local.general_tags
+
+}
+
+### Replicate DB module ###
+module "db_replica" {
+  source = "terraform-aws-modules/rds/aws"
+
+  count                  = var.create_db_replica ? 1 : 0
+  identifier             = "${var.env_name}-replica"
+  replicate_source_db    = module.db_master.db_instance_id
+  engine                 = local.engine
+  major_engine_version   = local.major_engine_version
+  family                 = local.family         #DB parameter group
+  instance_class         = local.instance_class #DB option group
+  allocated_storage      = local.allocated_storage
+  deletion_protection    = false
+  skip_final_snapshot    = true
+  subnet_ids             = module.vpc.private_subnets
+  vpc_security_group_ids = [module.sg_backend_db_private.security_group_id]
+  tags                   = local.general_tags
+}
+
+#Lambda module for EC2 instances backups in VPC
+
 module "lambda_ec2_backup" {
-  source     = "terraform-aws-modules/lambda/aws"
+  source = "terraform-aws-modules/lambda/aws"
 
-  function_name  = "backup_ec2_lambda"
-  create_package = false
-  description = "Lambda function for EC2 instances backups and"
+  function_name            = "backup_ec2_lambda"
+  create_package           = false
+  description              = "Lambda function for EC2 instances backups and"
   handler                  = "scripts/${var.go_backup_filename}"
   store_on_s3              = true
   role_name                = "lambda_ami_backup_role"
@@ -414,8 +419,8 @@ module "lambda_ec2_backup" {
   timeout                  = 600
   attach_policy_statements = true
   s3_existing_package = {
-	bucket = module.lambda_s3.s3_bucket_id
-	key    = "scripts/${var.go_backup_filename}.zip"
+    bucket = module.lambda_s3.s3_bucket_id
+    key    = "scripts/${var.go_backup_filename}.zip"
   }
 
   policy_statements = {
@@ -455,10 +460,10 @@ module "lambda_ec2_cleanup" {
   create_role    = false
   runtime        = "python3.9"
   timeout        = 600
-  store_on_s3 = true
+  store_on_s3    = true
   s3_existing_package = {
-	bucket = module.lambda_s3.s3_bucket_id
-	key    = "scripts/${var.py_cleanup_filename}.zip"
+    bucket = module.lambda_s3.s3_bucket_id
+    key    = "scripts/${var.py_cleanup_filename}.zip"
   }
 
   create_current_version_allowed_triggers = false
@@ -502,30 +507,4 @@ module "eventbridge" {
   }
 }
 
-# TODO: will be removed after testing (was used for testing lambda function on local machine)
-#resource "null_resource" "lambda_go_build" {
-#  triggers = {
-#	build = sha1(file("scripts/${var.go_backup_filename}.go"))
-#  }
-#
-#  provisioner "local-exec" {
-#	command = "GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o scripts/${var.go_backup_filename} scripts/${var.go_backup_filename}.go"
-#  }
-#  provisioner "local-exec" {
-#	command = "zip scripts/${var.go_backup_filename}.zip scripts/${var.go_backup_filename}"
-#  }
-#  provisioner "local-exec" {
-#	command = "zip scripts/${var.py_cleanup_filename}.zip scripts/${var.py_cleanup_filename}.py"
-#  }
-#}
-#
-#
-#resource "null_resource" "upload_to_s3" {
-#  depends_on = [null_resource.lambda_go_build]
-#  provisioner "local-exec" {
-#	command = "aws s3 cp scripts/${var.go_backup_filename}.zip s3://${module.lambda_s3.s3_bucket_id}/scripts/${var.go_backup_filename}.zip"
-#  }
-#  provisioner "local-exec" {
-#	command = "aws s3 cp scripts/${var.py_cleanup_filename}.zip s3://${module.lambda_s3.s3_bucket_id}/scripts/${var.py_cleanup_filename}.zip"
-#  }
-#}
+
