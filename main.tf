@@ -1,4 +1,4 @@
-#### VPC Module ####
+# VPC Module #
 module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
 
@@ -33,7 +33,7 @@ module "github_s3_policy" {
   create_policy = true
   policy        = data.aws_iam_policy_document.s3_github_policy.json
 }
-### S3 bucket for lambda storing ###
+# S3 bucket for lambda storing #
 module "lambda_s3" {
   source = "terraform-aws-modules/s3-bucket/aws"
 
@@ -49,8 +49,8 @@ module "lambda_s3" {
   tags = local.general_tags
 }
 
-
-#### Bastian Security group Module ####
+# commented out for now cost savings after testing
+# Bastian Security group Module #
 #module "bastion-sg" {
 #  source = "terraform-aws-modules/security-group/aws"
 #
@@ -93,7 +93,7 @@ module "sg_web_public" {
 
 }
 
-#### DB Security group Module ####
+# DB Security group Module #
 module "sg_backend_db_private" {
   source = "terraform-aws-modules/security-group/aws"
 
@@ -106,7 +106,7 @@ module "sg_backend_db_private" {
   egress_rules        = ["all-all"]
 }
 
-#### public ALB Module ####
+# public ALB Module #
 # Health check is needed for the ALB to work properly
 module "alb_web_public" {
   source  = "terraform-aws-modules/alb/aws"
@@ -142,7 +142,7 @@ module "alb_web_public" {
   }
 }
 
-#### private ALB Module ####
+# private ALB Module #
 module "alb_backend_private" {
   source  = "terraform-aws-modules/alb/aws"
   version = "~> 6.0"
@@ -175,7 +175,7 @@ module "alb_backend_private" {
   ]
   tags = local.general_tags
 }
-### public ASG module ###
+# public ASG module #
 module "asg_web_public" {
   source = "terraform-aws-modules/autoscaling/aws"
 
@@ -267,7 +267,7 @@ module "asg_web_public" {
   }
 }
 
-#### private ASG module ###
+# private ASG module #
 module "asg_backend_private" {
   source = "terraform-aws-modules/autoscaling/aws"
 
@@ -354,6 +354,7 @@ module "asg_backend_private" {
     }
   }
 }
+# commented out for cost savings after testing
 ### DB module ###
 #module "db_master" {
 #  source = "terraform-aws-modules/rds/aws"
@@ -501,6 +502,7 @@ module "eventbridge" {
   }
 }
 
+# TODO: will be removed after testing (was used for testing lambda function on local machine)
 #resource "null_resource" "lambda_go_build" {
 #  triggers = {
 #	build = sha1(file("scripts/${var.go_backup_filename}.go"))

@@ -32,4 +32,9 @@ workflows:
       - type: init
       - type: plan
         extra_args: ["-var-file=test.tfvars"]
+  - tag_query: "prod"
+    plan:
+      - type: init
+      - type: plan
+        extra_args: ["-var-file=prod.tfvars"]
 dirs:
