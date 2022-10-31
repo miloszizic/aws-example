@@ -28,25 +28,27 @@ Scripts used for Lambda:
   * **AWS_ROLE** - This is an IAM role that has permissions to deploy any of the resources in this project including IAM roles and policies with **_Terrateam_**.
     * Example : `arn:aws:iam::123456789012:role/terraform`
       * Trust Policy Example:
-  ```json
-		{
-			"Version": "2012-10-17",
-			"Statement": [
-			  {
-				"Effect": "Allow",
-				"Principal": {
-				  "Federated": "arn:aws:iam::062791981969:oidc-provider/token.actions.githubusercontent.com" # This is the GitHub OIDC provider
-				},
-				"Action": "sts:AssumeRoleWithWebIdentity",
-				"Condition": {
-				  "StringEquals": {
-                         "token.actions.githubusercontent.com:sub": "repo:miloszizic/*:*", # This is the GitHub repo
-                         "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-				  }
-			  }
-			]
-		  }
-	```
+```json
+
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Federated": "arn:aws:iam::062791981969:oidc-provider/token.actions.githubusercontent.com" #This is the GitHub Actions OIDC provider
+            },
+            "Action": "sts:AssumeRoleWithWebIdentity",
+            "Condition": {
+                "StringLike": {
+                    "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+                    "token.actions.githubusercontent.com:sub": "repo:miloszizic/*:*" #This is the GitHub repo name
+                }
+            }
+        }
+    ]
+}
+  ```
   * **_AWS_ROLE_S3_** - This is an IAM role that gives GitHub actions permission to upload and host lambda functions.
   It also needs trust policy as the **_AWS_ROLE_**.
 
