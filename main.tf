@@ -450,7 +450,7 @@ module "lambda_ec2_backup" {
 
   function_name            = "backup_ec2_lambda"
   create_package           = false
-  description              = "Lambda function for EC2 instances backups and"
+  description              = "Lambda function for EC2 instances backups and ss"
   handler                  = "scripts/${var.go_backup_filename}"
   store_on_s3              = true
   role_name                = "lambda_ami_backup_role"
