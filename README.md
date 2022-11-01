@@ -58,7 +58,9 @@ Scripts used for Lambda:
    * Go to repository access and select **Only select repositories** and select your repository
    * Save changes
 7. Run your first Terrateam deploy
-   *
+   * Push the code to your repository
+   * All you have to do now is make a pull request to the master branch and wait for Terrateam to run the plan
+   * After the plan is finished you can comment `terrateam apply` to deploy the changes to your account
 
    **_Note_** : Only changes to terraform code will trigger Terrateam. Changes to `scripts` will only trigger GitHub action.
 
