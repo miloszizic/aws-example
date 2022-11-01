@@ -23,37 +23,31 @@ Scripts used for Lambda:
 
 #### Usage on a different AWS account:
 
-* Clone this repo
-* Add the following secrets to your GitHub repo:
-  * **AWS_ROLE** - This is an IAM role that has permissions to deploy any of the resources in this project including IAM roles and policies with **_Terrateam_**.
-    * Example : `arn:aws:iam::123456789012:role/terraform`
-      * Trust Policy Example:
-```json
+1. Clone this repository
 
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Principal": {
-                "Federated": "arn:aws:iam::062791981969:oidc-provider/token.actions.githubusercontent.com" #This is the GitHub Actions OIDC provider
-            },
-            "Action": "sts:AssumeRoleWithWebIdentity",
-            "Condition": {
-                "StringLike": {
-                    "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-                    "token.actions.githubusercontent.com:sub": "repo:miloszizic/*:*" #This is the GitHub repo name
-                }
-            }
-        }
-    ]
-}
-  ```
-  * **_AWS_ROLE_S3_** - This is an IAM role that gives GitHub actions permission to upload and host lambda functions.
-  It also needs trust policy as the **_AWS_ROLE_**.
+2. Navigate to provider.tf file and change values of backend "s3" to your S3 bucket
+   that will be used for storing the state and make sure you init the state of the project
 
-  * **_S3_BUCKET_** - This is the name of the S3 bucket that will be used to store the lambda functions.
-* Now every time you make a PR to the master breanch, Terrateam will run a plan and apply on comment `terrateam apply` in PR . Changes in the `scripts` directory will be compiled and uploaded to S3 with other GitHub action.
+3. Configure AWS to allow GitHub Actions to communicate using OpenID Connect
+   * Sign in to the AWS Management Console and navigate to the IAM console
+   * Select Access management → Identity providers
+   * Select Add provider
+   * Select OpenID Connect
+   * Provider URL: https://token.actions.githubusercontent.com → Get thumbprint
+     Audience: sts.amazonaws.com
+   * Select Add provider
+
+4. Create the IAM role using this repository
+   * Copy the ARN of GitHub federated identity that you made in first step
+   * Navigate to test.tfvars (testing env) and set it as a value for **github_federated_identity**
+   * Also in the **test.tfvars** change the **github_repo** and **lambda_s3_name** wich will represent your S3 bucket name
+   and the name of the repository you want to use for the project
+   * In your repo directory using terminal run :
+   `terraform apply -target=module.github_role -target=module.lambda_s3 -var-file=test.tfvars -auto-approve`. This command will create the IAM role and S3 bucket for you to use
+   in the next steps
+   * When the apply is finished navigate to your repo and add the folowing secrets:
+     * **AWS_ROLE** with the value of github_role_arn in the output from revius command
+     * **AWS_S3** with the value of **s3_lambda_bucket_id** in the output from previus command
 
 **_Note_** : Only changes to terraform code will trigger Terrateam. Changes to `scripts` will only trigger GitHub action.
 

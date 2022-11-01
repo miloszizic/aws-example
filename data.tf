@@ -5,7 +5,7 @@ data "aws_iam_policy_document" "github_trust_policy" {
     actions = ["sts:AssumeRoleWithWebIdentity"]
 
     condition {
-      test     = "StringEquals"
+      test     = "StringLike"
       variable = "token.actions.githubusercontent.com:aud"
       values   = ["sts.amazonaws.com"]
     }
@@ -23,10 +23,9 @@ data "aws_iam_policy_document" "github_trust_policy" {
   }
 }
 
-data "aws_iam_policy_document" "s3_github_policy" {
-  statement {
-    sid       = "AllowFullS3Access"
-    actions   = ["s3:*"]
-    resources = [module.lambda_s3.s3_bucket_arn, "${module.lambda_s3.s3_bucket_arn}/*"]
-  }
+data "aws_secretsmanager_secret" "db_password" {
+  name = "${var.env_name}-db-credentials"
+}
+data "aws_secretsmanager_secret_version" "db_password" {
+  secret_id = data.aws_secretsmanager_secret.db_password.id
 }

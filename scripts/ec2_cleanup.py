@@ -18,7 +18,7 @@ images = ec2.images.filter(Owners=["self"])
 def lambda_handler(event, context):
 	reservations = ec.describe_instances(Filters=[
 		{
-			'Name': 'tag:Name', 'Values': ['bastion']
+			'Name': 'tag:Backup', 'Values': ['true']
 		},
 	]).get('Reservations', [])
 

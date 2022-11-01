@@ -130,6 +130,11 @@ variable "github_repo" {
   default = ""
   type    = string
 }
+
+variable "lambda_s3_name" {
+  default = "s3-lambda-20221018154517921000000002"
+  type    = string
+}
 variable "github_federated_identity" {
   default = ""
   type    = string
@@ -139,6 +144,10 @@ variable "create_db" {
   type    = bool
 }
 variable "create_db_replica" {
+  default = false
+  type    = bool
+}
+variable "enable_rds_secret_rotation" {
   default = false
   type    = bool
 }

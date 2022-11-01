@@ -1,4 +1,6 @@
-# VPC Module #
+################################################################################
+# Main VPC module
+################################################################################
 module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
 
@@ -19,25 +21,14 @@ module "vpc" {
 
   tags = local.general_tags
 }
-module "github_role" {
-  source                   = "terraform-aws-modules/iam/aws//modules/iam-assumable-role"
-  create_role              = true
-  role_name                = "github-role-s3"
-  custom_role_trust_policy = data.aws_iam_policy_document.github_trust_policy.json
-  custom_role_policy_arns  = [module.github_s3_policy.arn]
 
-}
-module "github_s3_policy" {
-  source        = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  name          = "github-s3-policy"
-  create_policy = true
-  policy        = data.aws_iam_policy_document.s3_github_policy.json
-}
-# S3 bucket for lambda storing #
+################################################################################
+# S3 bucket module for storing lambda functions
+################################################################################
 module "lambda_s3" {
   source = "terraform-aws-modules/s3-bucket/aws"
 
-  bucket                  = "s3-lambda-20221018154517921000000002"
+  bucket                  = var.lambda_s3_name
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -45,15 +36,26 @@ module "lambda_s3" {
   versioning = {
     enabled = true
   }
-
   tags = local.general_tags
 }
-
-
-#Bastian Security group Module #
+################################################################################
+# IAM assume role module for github access with IAM full access and PowerUserAccess
+################################################################################
+module "github_role" {
+  source                   = "terraform-aws-modules/iam/aws//modules/iam-assumable-role"
+  create_role              = true
+  role_name                = "github-role"
+  custom_role_trust_policy = data.aws_iam_policy_document.github_trust_policy.json
+  attach_poweruser_policy  = true
+  custom_role_policy_arns = [
+    "arn:aws:iam::aws:policy/IAMFullAccess"
+  ]
+}
+################################################################################
+# Bastion security group module
+################################################################################
 module "bastion-sg" {
   source = "terraform-aws-modules/security-group/aws"
-
 
   count               = var.create_bastion ? 1 : 0
   name                = "${var.env_name}-bastiansg"
@@ -66,7 +68,9 @@ module "bastion-sg" {
   tags                = local.general_tags
 
 }
-### EC2-Instance Module ####
+################################################################################
+# EC2 bastion instance module
+################################################################################
 module "ec2_bastion_instance" {
   source  = "terraform-aws-modules/ec2-instance/aws"
   version = "~> 4.0"
@@ -76,7 +80,7 @@ module "ec2_bastion_instance" {
   count                  = var.create_bastion ? 1 : 0
   ami                    = var.ami
   instance_type          = var.instance_type
-  vpc_security_group_ids = [module.bastion-sg.security_group_id]
+  vpc_security_group_ids = [module.bastion-sg[0].security_group_id]
   subnet_id              = element(module.vpc.public_subnets, 0)
   key_name               = var.key_pair
 
@@ -95,8 +99,9 @@ module "sg_web_public" {
   ingress_rules       = ["http-80-tcp", "ssh-tcp"]
 
 }
-
-# DB Security group Module #
+################################################################################
+# DB Security group module
+################################################################################
 module "sg_backend_db_private" {
   source = "terraform-aws-modules/security-group/aws"
 
@@ -109,8 +114,9 @@ module "sg_backend_db_private" {
   egress_rules        = ["all-all"]
 }
 
-# public ALB Module #
-# Health check is needed for the ALB to work properly
+################################################################################
+# Public facing  ALB module
+################################################################################
 module "alb_web_public" {
   source  = "terraform-aws-modules/alb/aws"
   version = "~> 6.0"
@@ -122,7 +128,7 @@ module "alb_web_public" {
   vpc_id          = module.vpc.vpc_id
   subnets         = module.vpc.public_subnets
   security_groups = [module.sg_web_public.security_group_id]
-
+  # Health check is needed for the ALB to work properly
   target_groups = [
     {
       name_prefix      = "pref-"
@@ -145,7 +151,9 @@ module "alb_web_public" {
   }
 }
 
-# private ALB Module #
+################################################################################
+# Private ALB module
+################################################################################
 module "alb_backend_private" {
   source  = "terraform-aws-modules/alb/aws"
   version = "~> 6.0"
@@ -178,7 +186,10 @@ module "alb_backend_private" {
   ]
   tags = local.general_tags
 }
-# public ASG module #
+
+################################################################################
+# Public ASG module
+################################################################################
 module "asg_web_public" {
   source = "terraform-aws-modules/autoscaling/aws"
 
@@ -269,8 +280,9 @@ module "asg_web_public" {
     }
   }
 }
-
-# private ASG module #
+################################################################################
+# Private ASG module
+################################################################################
 module "asg_backend_private" {
   source = "terraform-aws-modules/autoscaling/aws"
 
@@ -357,8 +369,9 @@ module "asg_backend_private" {
     }
   }
 }
-
-## DB module ###
+################################################################################
+# Module for rds master
+################################################################################
 module "db_master" {
   source = "terraform-aws-modules/rds/aws"
 
@@ -380,18 +393,20 @@ module "db_master" {
 
   db_name  = "masterdb"
   username = "poc"
-  password = "POCDBpocdb"
+  password = data.aws_secretsmanager_secret_version.db_password
   tags     = local.general_tags
 
 }
 
-### Replicate DB module ###
+################################################################################
+# Module for rds replica
+################################################################################
 module "db_replica" {
   source = "terraform-aws-modules/rds/aws"
 
   count                  = var.create_db_replica ? 1 : 0
   identifier             = "${var.env_name}-replica"
-  replicate_source_db    = module.db_master.db_instance_id
+  replicate_source_db    = module.db_master[0].db_instance_id
   engine                 = local.engine
   major_engine_version   = local.major_engine_version
   family                 = local.family         #DB parameter group
@@ -403,9 +418,33 @@ module "db_replica" {
   vpc_security_group_ids = [module.sg_backend_db_private.security_group_id]
   tags                   = local.general_tags
 }
+################################################################################
+# AWS secrets manager for DB credentials
+################################################################################
+resource "random_password" "db_password" {
+  length           = 15
+  special          = true
+  override_special = "_!%ˆ"
+}
+resource "aws_secretsmanager_secret" "db_password" {
+  name = "${var.env_name}-db-credentials"
+  tags = local.general_tags
+}
+resource "aws_secretsmanager_secret_version" "db_password" {
+  secret_id     = aws_secretsmanager_secret.db_password.id
+  secret_string = random_password.db_password.result
+}
+resource "aws_secretsmanager_secret_rotation" "test" {
+  rotation_lambda_arn = ""
+  secret_id           = ""
+  rotation_rules {
+    automatically_after_days = 0
+  }
+}
 
-#Lambda module for EC2 instances backups in VPC
-
+################################################################################
+# Lambda module for EC2 instances
+################################################################################
 module "lambda_ec2_backup" {
   source = "terraform-aws-modules/lambda/aws"
 
@@ -448,7 +487,9 @@ module "lambda_ec2_backup" {
   }
   tags = local.general_tags
 }
-
+################################################################################
+# Lambda module for EC2 instances cleanup for old AMIs
+################################################################################
 module "lambda_ec2_cleanup" {
   source = "terraform-aws-modules/lambda/aws"
 
@@ -475,8 +516,9 @@ module "lambda_ec2_cleanup" {
   }
   tags = local.general_tags
 }
-
+################################################################################
 # Make event-bridge rule to trigger lambda function every day at 10:00 UTC
+################################################################################
 module "eventbridge" {
   source     = "terraform-aws-modules/eventbridge/aws"
   create_bus = false
