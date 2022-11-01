@@ -434,13 +434,6 @@ resource "aws_secretsmanager_secret_version" "db_password" {
   secret_id     = aws_secretsmanager_secret.db_password.id
   secret_string = random_password.db_password.result
 }
-resource "aws_secretsmanager_secret_rotation" "test" {
-  rotation_lambda_arn = ""
-  secret_id           = ""
-  rotation_rules {
-    automatically_after_days = 0
-  }
-}
 
 ################################################################################
 # Lambda module for EC2 instances
