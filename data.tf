@@ -5,13 +5,13 @@ data "aws_iam_policy_document" "github_trust_policy" {
     actions = ["sts:AssumeRoleWithWebIdentity"]
 
     condition {
-      test     = "StringLike"
+      test     = "ForAllValues:StringLike"
       variable = "token.actions.githubusercontent.com:aud"
       values   = ["sts.amazonaws.com"]
     }
 
     condition {
-      test     = "StringLike"
+      test     = "ForAllValues:StringLike"
       variable = "token.actions.githubusercontent.com:sub"
       values   = ["repo:${var.github_repo}"]
     }
