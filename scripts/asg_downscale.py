@@ -1,4 +1,5 @@
-# This script is used to shut down an ASG instances
+# This script is used to shut down an ASG instances, there are not in use by Lambda at Default
+# it can be used to stop the instances in the ASG for a period of time
 
 import boto3
 
@@ -6,7 +7,7 @@ import boto3
 def lambda_handler(event, context):
 	asg = boto3.client('autoscaling')
 
-	# Get all autoscaling groups with tag "Name: Poc"
+	# Get all autoscaling groups with tag "Name: Poc" you can change this to any tag you want
 	auto_scaling_groups = asg.describe_auto_scaling_groups()['AutoScalingGroups']
 	print(auto_scaling_groups)
 	for group in auto_scaling_groups:
