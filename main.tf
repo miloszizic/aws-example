@@ -48,9 +48,17 @@ module "github_role" {
   custom_role_trust_policy = data.aws_iam_policy_document.github_trust_policy.json
   attach_poweruser_policy  = true
   custom_role_policy_arns = [
-    "arn:aws:iam::aws:policy/IAMFullAccess"
+    "arn:aws:iam::aws:policy/IAMFullAccess",
+    aws_iam_policy.github_policy.arn,
   ]
 }
+
+resource "aws_iam_policy" "github_policy" {
+  name        = "github-policy"
+  description = "Policy for github actions to access lambda"
+  policy      = data.aws_iam_policy_document.github_lambda_policy.json
+}
+
 ################################################################################
 # Bastion security group module
 ################################################################################
