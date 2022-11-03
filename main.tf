@@ -500,7 +500,7 @@ module "lambda_ec2_cleanup" {
   source = "terraform-aws-modules/lambda/aws"
 
   function_name  = "cleanup_ec2_lambda"
-  description    = "Lambda function for EC2 instances cleanup of AMIs"
+  description    = "Lambda function for EC2 instances cleanup of AMIs "
   handler        = "scripts/ec2_cleanup/${var.py_cleanup_filename}.lambda_handler"
   lambda_role    = module.lambda_ec2_backup.lambda_role_arn
   create_package = false
