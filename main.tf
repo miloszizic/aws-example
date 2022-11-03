@@ -427,8 +427,9 @@ resource "random_password" "db_password" {
   override_special = "_!%ˆ"
 }
 resource "aws_secretsmanager_secret" "db_password" {
-  name = "${var.env_name}-db-credentials"
-  tags = local.general_tags
+  name                    = "${var.env_name}-db-credentials-secret"
+  recovery_window_in_days = 0
+  tags                    = local.general_tags
 }
 resource "aws_secretsmanager_secret_version" "db_password" {
   secret_id     = aws_secretsmanager_secret.db_password.id
@@ -444,7 +445,7 @@ module "lambda_ec2_backup" {
   function_name            = "backup_ec2_lambda"
   create_package           = false
   description              = "Lambda function for EC2 instances backups and ss"
-  handler                  = "scripts/${var.go_backup_filename}"
+  handler                  = "scripts/ec2_backup_go/${var.go_backup_filename}"
   store_on_s3              = true
   role_name                = "lambda_ami_backup_role"
   runtime                  = "go1.x"
@@ -485,6 +486,9 @@ module "lambda_ec2_backup" {
       source_arn = module.eventbridge.eventbridge_rule_arns["lambda-backup"]
     }
   }
+  environment_variables = {
+    SNS_TOPIC_ARN = module.sns_lambda_notification.sns_topic_arn
+  }
   tags = local.general_tags
 }
 ################################################################################
@@ -495,7 +499,7 @@ module "lambda_ec2_cleanup" {
 
   function_name  = "cleanup_ec2_lambda"
   description    = "Lambda function for EC2 instances cleanup of AMIs"
-  handler        = "${var.py_cleanup_filename}.lambda_handler"
+  handler        = "scripts/ec2_cleanup/${var.py_cleanup_filename}.lambda_handler"
   lambda_role    = module.lambda_ec2_backup.lambda_role_arn
   create_package = false
   create_role    = false
@@ -524,6 +528,7 @@ module "lambda_ec2_cleanup" {
 ################################################################################
 module "sns_lambda_notification" {
   source = "terraform-aws-modules/sns/aws"
+
 
   name             = "lambda-notification"
   create_sns_topic = true
