@@ -13,6 +13,7 @@ AWS services used:
 * EC2
 * Lambda
 * EventBridge
+* SNS
 
 Scripts used for Lambda:
 * Python (up-scaling and downscaling, AMI cleanup)
