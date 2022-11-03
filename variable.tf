@@ -155,3 +155,7 @@ variable "create_bastion" {
   default = false
   type    = bool
 }
+variable "email_endpoint" {
+  default = ""
+  type    = string
+}

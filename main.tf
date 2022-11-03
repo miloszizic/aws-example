@@ -469,6 +469,13 @@ module "lambda_ec2_backup" {
       ]
       resources = ["*"]
     }
+    sns = {
+      effect = "Allow"
+      actions = [
+        "sns:Publish",
+      ]
+      resources = [module.sns_lambda_notification.sns_topic_arn]
+    }
   }
 
   create_current_version_allowed_triggers = false
@@ -507,7 +514,26 @@ module "lambda_ec2_cleanup" {
       source_arn = module.eventbridge.eventbridge_rule_arns["lambda-cleanup"]
     }
   }
+  environment_variables = {
+    SNS_TOPIC_ARN = module.sns_lambda_notification.sns_topic_arn
+  }
   tags = local.general_tags
+}
+################################################################################
+# SNS module for lambda notifications
+################################################################################
+module "sns_lambda_notification" {
+  source = "terraform-aws-modules/sns/aws"
+
+  name             = "lambda-notification"
+  create_sns_topic = true
+  fifo_topic       = false
+
+}
+resource "aws_sns_topic_subscription" "lambda_ec2_backup" {
+  topic_arn = module.sns_lambda_notification.sns_topic_arn
+  protocol  = "email"
+  endpoint  = var.email_endpoint
 }
 ################################################################################
 # Make event-bridge rule to trigger lambda function every day at 10:00 UTC

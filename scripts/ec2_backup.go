@@ -9,7 +9,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"log"
+	"os"
 	"time"
 )
 
@@ -27,6 +29,13 @@ func HandleRequest() {
 		log.Fatalf("unable to load SDK config, %v", err)
 	}
 	ec2client := ec2.NewFromConfig(cfg)
+	// define sns topic client
+	snsClient := sns.NewFromConfig(cfg)
+	// get sns topic arn from environment variable
+	topicArn := os.Getenv("SNS_TOPIC_ARN")
+	if topicArn == "" {
+		log.Fatal("SNS_TOPIC_ARN environment variable must be set")
+	}
 
 	params := &ec2.DescribeInstancesInput{
 		Filters: []types.Filter{
@@ -48,6 +57,15 @@ func HandleRequest() {
 			err = makeInstanceSnapshot(context.TODO(), cfg, *instance.InstanceId)
 			if err != nil {
 				log.Fatalf("unable to make instance snapshot, %v", err)
+			}
+			// publish message to sns topic
+			_, err := snsClient.Publish(context.TODO(), &sns.PublishInput{
+				Subject:  aws.String("EC2 Snapshot notification"),
+				Message:  aws.String("Instance ID: " + *instance.InstanceId + " Snapshot ID: " + *instance.InstanceId + "-" + time.Now().Format("2006-01-02")),
+				TopicArn: aws.String(topicArn),
+			})
+			if err != nil {
+				log.Fatalf("unable to publish message to sns topic, %v", err)
 			}
 		}
 	}

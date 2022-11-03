@@ -25,7 +25,7 @@ data "aws_iam_policy_document" "github_trust_policy" {
 
 data "aws_secretsmanager_secret" "db_password" {
   depends_on = [aws_secretsmanager_secret_version.db_password]
-  name = "${var.env_name}-db-credentials"
+  name       = "${var.env_name}-db-credentials"
 }
 data "aws_secretsmanager_secret_version" "db_password" {
   secret_id = data.aws_secretsmanager_secret.db_password.id
