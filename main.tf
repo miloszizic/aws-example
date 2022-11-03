@@ -445,7 +445,7 @@ module "lambda_ec2_backup" {
   function_name            = "backup_ec2_lambda"
   create_package           = false
   description              = "Lambda function for EC2 instances backups and ss"
-  handler                  = "scripts/${var.go_backup_filename}"
+  handler                  = "scripts/ec2_backup_go/${var.go_backup_filename}"
   store_on_s3              = true
   role_name                = "lambda_ami_backup_role"
   runtime                  = "go1.x"
@@ -499,7 +499,7 @@ module "lambda_ec2_cleanup" {
 
   function_name  = "cleanup_ec2_lambda"
   description    = "Lambda function for EC2 instances cleanup of AMIs"
-  handler        = "${var.py_cleanup_filename}.lambda_handler"
+  handler        = "scripts/ec2_cleanup/${var.py_cleanup_filename}.lambda_handler"
   lambda_role    = module.lambda_ec2_backup.lambda_role_arn
   create_package = false
   create_role    = false

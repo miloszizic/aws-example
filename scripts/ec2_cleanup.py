@@ -2,6 +2,7 @@
 # This Lambda Function will delete AMIs and their associated snapshots for
 # instances that have a tag named "Backup" with a value of "True" in
 # the ASG.
+import os
 import pprint
 
 import boto3
@@ -13,6 +14,8 @@ import sys
 ec = boto3.client('ec2', 'us-east-1')
 ec2 = boto3.resource('ec2', 'us-east-1')
 images = ec2.images.filter(Owners=["self"])
+sns = boto3.client('sns', 'us-east-1')
+sns_arn = os.environ.get('SNS_ARN')
 
 
 def lambda_handler(event, context):
@@ -88,6 +91,11 @@ def lambda_handler(event, context):
 
 		print("About to process the following AMIs:")
 		print(imagesList)
+		sns.publish(
+			TopicArn=sns_arn,
+			Message="About to process the following AMIs: " + str(imagesList),
+			Subject="AMI Cleanup Lambda Function",
+		)
 
 		if backupSuccess:
 
