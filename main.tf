@@ -486,6 +486,9 @@ module "lambda_ec2_backup" {
       source_arn = module.eventbridge.eventbridge_rule_arns["lambda-backup"]
     }
   }
+  environment_variables = {
+    SNS_TOPIC_ARN = module.sns_lambda_notification.sns_topic_arn
+  }
   tags = local.general_tags
 }
 ################################################################################
