@@ -427,8 +427,9 @@ resource "random_password" "db_password" {
   override_special = "_!%ˆ"
 }
 resource "aws_secretsmanager_secret" "db_password" {
-  name = "${var.env_name}-db-credentials"
-  tags = local.general_tags
+  name                    = "${var.env_name}-db-credentials-secret"
+  recovery_window_in_days = 0
+  tags                    = local.general_tags
 }
 resource "aws_secretsmanager_secret_version" "db_password" {
   secret_id     = aws_secretsmanager_secret.db_password.id
