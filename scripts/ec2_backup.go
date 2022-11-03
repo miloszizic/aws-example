@@ -12,10 +12,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"log"
 	"os"
+	"strconv"
 	"time"
 )
-
-var deleteDate = time.Now().AddDate(0, 0, 7).Format("2006-01-02")
 
 func main() {
 	lambda.Start(HandleRequest)
@@ -54,7 +53,10 @@ func HandleRequest() {
 	for _, reservation := range instances.Reservations {
 		for _, instance := range reservation.Instances {
 			fmt.Println("Instance ID: ", *instance.InstanceId)
-			err = makeInstanceSnapshot(context.TODO(), cfg, *instance.InstanceId)
+			// get backup retention days from tag values
+			retentionDays := getBackupRetentionDays(instance)
+			deleteDate := time.Now().AddDate(0, 0, retentionDays).Format("2006-01-02")
+			err = makeInstanceSnapshot(context.TODO(), cfg, *instance.InstanceId, deleteDate)
 			if err != nil {
 				log.Fatalf("unable to make instance snapshot, %v", err)
 			}
@@ -72,7 +74,7 @@ func HandleRequest() {
 }
 
 // makeInstanceSnapshot creates an image of an instance and add tags of a date
-func makeInstanceSnapshot(ctx context.Context, cfg aws.Config, instanceID string) error {
+func makeInstanceSnapshot(ctx context.Context, cfg aws.Config, instanceID string, delete string) error {
 	svc := ec2.NewFromConfig(cfg)
 	input := &ec2.CreateImageInput{
 		Name:        aws.String(instanceID + "-" + time.Now().Format("2006-01-02")),
@@ -84,7 +86,7 @@ func makeInstanceSnapshot(ctx context.Context, cfg aws.Config, instanceID string
 				Tags: []types.Tag{
 					{
 						Key:   aws.String("DeleteOn"),
-						Value: aws.String(deleteDate),
+						Value: aws.String(delete),
 					},
 				},
 			},
@@ -96,4 +98,18 @@ func makeInstanceSnapshot(ctx context.Context, cfg aws.Config, instanceID string
 	}
 	fmt.Println("Snapshot ID: ", *result.ImageId)
 	return nil
+}
+
+// Iterate over tags in the instance and get the backup retention days
+func getBackupRetentionDays(instance types.Instance) int {
+	for _, tag := range instance.Tags {
+		if *tag.Key == "BackupRetentionDays" {
+			intValue, err := strconv.Atoi(*tag.Value)
+			if err != nil {
+				log.Fatalf("unable to convert tag value to int, %v", err)
+			}
+			return intValue
+		}
+	}
+	return 0
 }

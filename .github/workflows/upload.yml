@@ -74,8 +74,5 @@ jobs:
       run: aws s3 ls ${{ secrets.S3_BUCKET }}/scripts --recursive --human-readable --summarize
 
     - name: Deploying Go Backup Lambda function
-      uses: appleboy/lambda-action@master
-      with:
-        role: ${{ secrets.AWS_ROLE }}
-        function_name: backup_ec2_lambda
-        zip_file: ec2_backup.zip
+      run: |
+        aws lambda update-function-code --function-name ec2_backup --s3-bucket ${{ secrets.S3_BUCKET }} --s3-key scripts/ec2_backup.zip

@@ -22,17 +22,6 @@ data "aws_iam_policy_document" "github_trust_policy" {
     }
   }
 }
-data "aws_iam_policy_document" "github_lambda_policy" {
-  statement {
-    effect = "Allow"
-    actions = [
-      "lambda:UpdateFunctionCode",
-      "lambda:CreateFunction",
-      "lambda:UpdateFunctionConfiguration",
-    ]
-    resources = [module.lambda_ec2_backup.lambda_function_arn, module.lambda_ec2_cleanup.lambda_function_arn]
-  }
-}
 
 data "aws_secretsmanager_secret" "db_password" {
   depends_on = [aws_secretsmanager_secret_version.db_password]
