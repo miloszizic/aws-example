@@ -525,6 +525,7 @@ module "lambda_ec2_cleanup" {
 module "sns_lambda_notification" {
   source = "terraform-aws-modules/sns/aws"
 
+
   name             = "lambda-notification"
   create_sns_topic = true
   fifo_topic       = false
