@@ -35,12 +35,16 @@ func HandleRequest() {
 	if topicArn == "" {
 		log.Fatal("SNS_TOPIC_ARN environment variable must be set")
 	}
-
+	// get all instances that tag with Backup and status is running
 	params := &ec2.DescribeInstancesInput{
 		Filters: []types.Filter{
 			{
 				Name:   aws.String("tag:Backup"),
 				Values: []string{"true"},
+			},
+			{
+				Name:   aws.String("instance-state-name"),
+				Values: []string{"running"},
 			},
 		},
 	}
