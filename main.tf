@@ -225,17 +225,28 @@ module "asg_web_public" {
       notification_metadata = jsonencode({ "goodbye" = "done" })
     }
   ]
+  # Instance refresh configuration
+  instance_refresh = {
+    strategy = "Rolling"
+    preferences = {
+      instance_warmup        = 300
+      min_healthy_percentage = 50
+    }
+  }
 
   # Launch template
   launch_template_name        = "${var.env_name}-launch-template"
   launch_template_description = "Complete launch template example"
   image_id                    = var.ami
   instance_type               = var.instance_type
-  user_data                   = base64encode(local.user_data_internal)
+  user_data                   = base64encode(file("scripts/userdata.sh"))
   # ARNs, for use with Application or Network Load Balancing
   target_group_arns = module.alb_web_public.target_group_arns
   # A list of security group IDs to associate with.
-  security_groups = [module.sg_web_public.security_group_id]
+  security_groups           = [module.sg_web_public.security_group_id]
+  iam_instance_profile_name = module.asg_logs_role.iam_instance_profile_name
+
+
 
   # Target scaling policy schedule based on average CPU load
   scaling_policies = {
@@ -317,7 +328,14 @@ module "asg_backend_private" {
       notification_metadata = jsonencode({ "goodbye" = "done" })
     }
   ]
-
+  # Instance refresh configuration
+  instance_refresh = {
+    strategy = "Rolling"
+    preferences = {
+      instance_warmup        = 300
+      min_healthy_percentage = 50
+    }
+  }
   # Launch template
   launch_template_name        = "${var.env_name}-launch-template"
   launch_template_description = "Complete launch template example"
@@ -325,6 +343,10 @@ module "asg_backend_private" {
   instance_type               = var.instance_type
   target_group_arns           = module.alb_backend_private.target_group_arns
   security_groups             = [module.sg_backend_db_private.security_group_id]
+  user_data                   = base64encode(file("scripts/userdata.sh"))
+  iam_instance_profile_name   = module.asg_logs_role.iam_instance_profile_name
+
+
 
   # Target scaling policy schedule based on average CPU load
   scaling_policies = {
@@ -370,6 +392,19 @@ module "asg_backend_private" {
       }
     }
   }
+}
+################################################################################
+# Role for ASG logs delivery to cloudwatch
+################################################################################
+module "asg_logs_role" {
+  source                   = "terraform-aws-modules/iam/aws//modules/iam-assumable-role"
+  create_role              = true
+  role_name                = "asg_logs_role"
+  create_instance_profile  = true
+  custom_role_trust_policy = data.aws_iam_policy_document.autoscaling_trust_policy_document.json
+  custom_role_policy_arns = [
+    "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy",
+  ]
 }
 ################################################################################
 # Module for rds master
@@ -446,7 +481,7 @@ module "lambda_ec2_backup" {
 
   function_name            = "backup_ec2_lambda"
   create_package           = false
-  description              = "Lambda function for EC2 instances backups and ss"
+  description              = "Lambda function for EC2 instances backups and AMI backups"
   handler                  = "scripts/ec2_backup_go/${var.go_backup_filename}"
   store_on_s3              = true
   role_name                = "lambda_ami_backup_role"
