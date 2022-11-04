@@ -1,17 +1,12 @@
 # Local values
 locals {
-  user_data_internal = <<-EOF
-                    #!/bin/bash
-                    yum -y install httpd
-                    echo 'Public LB Webserver' >> /var/www/html/index.html
-                    service httpd restart
-                    EOF
   # Tags
   backup_tags = {
-    Name        = "poc"
-    Backup      = "true"
-    Terraform   = "true"
-    Environment = var.env_name
+    Name                = "poc"
+    Backup              = "true"
+    Terraform           = "true"
+    Environment         = var.env_name
+    BackupRetentionDays = "7"
   }
   general_tags = {
     Terraform   = "true"

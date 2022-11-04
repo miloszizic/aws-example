@@ -100,13 +100,15 @@ func makeInstanceSnapshot(ctx context.Context, cfg aws.Config, instanceID string
 	return nil
 }
 
-// Iterate over tags in the instance and get the backup retention days
+// getBackupRetentionDays will get the backup retention days from the tag value
+// if the tag is not set, it will return 7 days
 func getBackupRetentionDays(instance types.Instance) int {
 	for _, tag := range instance.Tags {
 		if *tag.Key == "BackupRetentionDays" {
 			intValue, err := strconv.Atoi(*tag.Value)
 			if err != nil {
 				log.Fatalf("unable to convert tag value to int, %v", err)
+				return 7
 			}
 			return intValue
 		}
