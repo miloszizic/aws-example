@@ -479,15 +479,16 @@ resource "aws_secretsmanager_secret_version" "db_password" {
 module "lambda_ec2_backup" {
   source = "terraform-aws-modules/lambda/aws"
 
-  function_name            = "backup_ec2_lambda"
-  create_package           = false
-  description              = "Lambda function for EC2 instances backups and AMI backups"
-  handler                  = "scripts/ec2_backup_go/${var.go_backup_filename}"
-  store_on_s3              = true
-  role_name                = "lambda_ami_backup_role"
-  runtime                  = "go1.x"
-  timeout                  = 600
-  attach_policy_statements = true
+  function_name                 = "backup_ec2_lambda"
+  create_package                = false
+  description                   = "Lambda function for EC2 instances backups and AMI backups"
+  handler                       = "scripts/ec2_backup_go/${var.go_backup_filename}"
+  store_on_s3                   = true
+  role_name                     = "lambda_ami_backup_role"
+  runtime                       = "go1.x"
+  timeout                       = 600
+  attach_cloudwatch_logs_policy = true
+  attach_policy_statements      = true
   s3_existing_package = {
     bucket = module.lambda_s3.s3_bucket_id
     key    = "scripts/${var.go_backup_filename}.zip"
@@ -534,20 +535,43 @@ module "lambda_ec2_backup" {
 module "lambda_ec2_cleanup" {
   source = "terraform-aws-modules/lambda/aws"
 
-  function_name  = "cleanup_ec2_lambda"
-  description    = "Lambda function for EC2 instances cleanup of AMIs "
-  handler        = "scripts/ec2_cleanup/${var.py_cleanup_filename}.lambda_handler"
-  lambda_role    = module.lambda_ec2_backup.lambda_role_arn
-  create_package = false
-  create_role    = false
-  runtime        = "python3.9"
-  timeout        = 600
-  store_on_s3    = true
+  function_name                 = "cleanup_ec2_lambda"
+  description                   = "Lambda function for EC2 instances cleanup of AMIs "
+  handler                       = "scripts/ec2_cleanup/${var.py_cleanup_filename}.lambda_handler"
+  role_name                     = "lambda_ami_cleanup_role"
+  create_role                   = true
+  create_package                = false
+  runtime                       = "python3.9"
+  timeout                       = 600
+  store_on_s3                   = true
+  attach_cloudwatch_logs_policy = true
+  attach_policy_statements      = true
   s3_existing_package = {
     bucket = module.lambda_s3.s3_bucket_id
     key    = "scripts/${var.py_cleanup_filename}.zip"
   }
-
+  policy_statements = {
+    ec2backup = {
+      effect = "Allow"
+      actions = [
+        "ec2:CreateImage",
+        "ec2:CreateTags",
+        "ec2:DescribeSnapshots",
+        "ec2:DeleteSnapshot",
+        "ec2:DeregisterImage",
+        "ec2:DescribeImages",
+        "ec2:DescribeInstances",
+      ]
+      resources = ["*"]
+    }
+    sns = {
+      effect = "Allow"
+      actions = [
+        "sns:Publish",
+      ]
+      resources = [module.sns_lambda_notification.sns_topic_arn]
+    }
+  }
   create_current_version_allowed_triggers = false
   allowed_triggers = {
     ScanAmiRule = {
