@@ -14,7 +14,7 @@ import sys
 ec = boto3.client('ec2', 'us-east-1')
 ec2 = boto3.resource('ec2', 'us-east-1')
 images = ec2.images.filter(Owners=["self"])
-sns_arn = os.environ.get('SNS_TOPIC_ARN')
+sns_arn = os.environ['SNS_TOPIC_ARN']
 sns_client = boto3.client('sns', 'us-east-1')
 
 
@@ -92,6 +92,7 @@ def lambda_handler(event, context):
 		print("About to process the following AMIs:")
 		print(imagesList)
 		# publish sns message with images to delete
+		print("Publishing to" + sns_arn + "SNS message with images to delete")
 		sns_client.publish(
 			TopicArn=sns_arn,
 			Message='The following images will be deleted: ' + str(imagesList),
