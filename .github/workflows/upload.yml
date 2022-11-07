@@ -76,3 +76,4 @@ jobs:
     - name: Deploying Go Backup Lambda function
       run: |
         aws lambda update-function-code --function-name backup_ec2_lambda --s3-bucket "s3-lambda-20221018154517921000000002" --s3-key scripts/ec2_backup.zip
+        aws lambda update-function-code --function-name cleanup_ec2_lambda --s3-bucket "s3-lambda-20221018154517921000000002" --s3-key scripts/ec2_cleanup.zip
