@@ -38,7 +38,7 @@ jobs:
         cd $BASE_PATH
         go mod init ec2_backup
         go mod tidy
-        GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w"
+        GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build ec2_backup.go -ldflags="-s -w"
 
     - name: Create folders for zip
       run: |
