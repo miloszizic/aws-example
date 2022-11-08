@@ -22,7 +22,25 @@ module "vpc" {
 
   tags = local.general_tags
 }
+################################################################################
+# VPC reachability testing front-end to back-end on port 80
+################################################################################
 
+resource "aws_ec2_network_insights_path" "frontend-to-backend" {
+  source           = data.aws_instances.front-end.ids[0]
+  destination      = data.aws_instances.back-end.ids[0]
+  protocol         = "tcp"
+  destination_port = 80
+
+  tags = {
+    Name = "frontend-to-backend"
+  }
+}
+
+resource "aws_ec2_network_insights_analysis" "frontend-to-backend-analysis" {
+  network_insights_path_id = aws_ec2_network_insights_path.frontend-to-backend.id
+  filter_in_arns           = [module.alb_backend_private.lb_arn]
+}
 ################################################################################
 # S3 bucket module for storing lambda functions
 ################################################################################
@@ -412,7 +430,8 @@ module "asg_logs_role" {
 # Module for rds master
 ################################################################################
 module "db_master" {
-  source = "terraform-aws-modules/rds/aws"
+  source     = "terraform-aws-modules/rds/aws"
+  depends_on = [aws_secretsmanager_secret_version.db_password]
 
   count                  = var.create_db ? 1 : 0
   identifier             = "${var.env_name}-master"
@@ -430,10 +449,11 @@ module "db_master" {
   skip_final_snapshot     = true
   deletion_protection     = false
 
-  db_name  = "masterdb"
-  username = "poc"
-  password = data.aws_secretsmanager_secret_version.db_password
-  tags     = local.general_tags
+  db_name                = "masterdb"
+  username               = "poc"
+  password               = data.aws_secretsmanager_secret_version.db_password.secret_string
+  create_random_password = false
+  tags                   = local.general_tags
 
 }
 

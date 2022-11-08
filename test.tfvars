@@ -17,3 +17,6 @@ profile                   = "broadwing_test"
 github_repo               = "miloszizic/*"
 github_federated_identity = "arn:aws:iam::062791981969:oidc-provider/token.actions.githubusercontent.com"
 email_endpoint            = "milos.zizic@broadwing.io"
+create_bastion            = false
+create_db                 = false
+create_db_replica         = false

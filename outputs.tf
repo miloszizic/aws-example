@@ -122,7 +122,11 @@ output "security-group-backend-db-private_id" {
 ################################################################################
 # Outputs for DB Master
 ################################################################################
-
+output "db_master_instance_secret_string" {
+  description = "The secret string of the DB Master instance"
+  value       = data.aws_secretsmanager_secret_version.db_password.secret_string
+  sensitive   = true
+}
 ################################################################################
 # Outputs for DB Replica
 ################################################################################
