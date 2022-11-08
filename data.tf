@@ -40,3 +40,17 @@ data "aws_secretsmanager_secret" "db_password" {
 data "aws_secretsmanager_secret_version" "db_password" {
   secret_id = data.aws_secretsmanager_secret.db_password.id
 }
+data "aws_ami" "selected" {
+  owners      = ["self"]
+  most_recent = true
+  name_regex  = "poc-test-*"
+  filter {
+    name   = "state"
+    values = ["available"]
+  }
+  # Filter by tag name
+  filter {
+    name   = "tag:Project"
+    values = ["poc-test"]
+  }
+}

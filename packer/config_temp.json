@@ -1,0 +1,33 @@
+{
+  "agent": {
+	"metrics_collection_interval": 60,
+	"run_as_user": "root"
+  },
+  "logs": {
+	"logs_collected": {
+	  "files": {
+		"collect_list": [
+		  {
+			"file_path": "/var/log/messages",
+			"log_group_name": "messages",
+			"log_stream_name": "{instance_id}"
+		  },
+		  {
+			"file_path": "/opt/aws/amazon-cloudwatch-agent/logs/amazon-cloudwatch-agent.log",
+			"log_group_name": "amazon-cloudwatch-agent.log",
+			"log_stream_name": "{instance_id}",
+			"timezone": "UTC"
+		  },
+		  {
+			"file_path": "/opt/aws/amazon-cloudwatch-agent/logs/test.log",
+			"log_group_name": "test.log",
+			"log_stream_name": "{instance_id}",
+			"timezone": "Local"
+		  }
+		]
+	  }
+	},
+	"log_stream_name": "ec2_test_log_stream_name",
+	"force_flush_interval" : 15
+  }
+}

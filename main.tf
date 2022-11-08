@@ -19,6 +19,7 @@ module "vpc" {
 
   create_igw = true
 
+
   tags = local.general_tags
 }
 
@@ -33,6 +34,7 @@ module "lambda_s3" {
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
+  force_destroy           = true
   versioning = {
     enabled = true
   }
@@ -237,7 +239,7 @@ module "asg_web_public" {
   # Launch template
   launch_template_name        = "${var.env_name}-launch-template"
   launch_template_description = "Complete launch template example"
-  image_id                    = var.ami
+  image_id                    = data.aws_ami.selected.id
   instance_type               = var.instance_type
   user_data                   = base64encode(file("scripts/userdata.sh"))
   # ARNs, for use with Application or Network Load Balancing
@@ -339,7 +341,7 @@ module "asg_backend_private" {
   # Launch template
   launch_template_name        = "${var.env_name}-launch-template"
   launch_template_description = "Complete launch template example"
-  image_id                    = var.ami
+  image_id                    = data.aws_ami.selected.id
   instance_type               = var.instance_type
   target_group_arns           = module.alb_backend_private.target_group_arns
   security_groups             = [module.sg_backend_db_private.security_group_id]
@@ -546,6 +548,7 @@ module "lambda_ec2_cleanup" {
   store_on_s3                   = true
   attach_cloudwatch_logs_policy = true
   attach_policy_statements      = true
+
   s3_existing_package = {
     bucket = module.lambda_s3.s3_bucket_id
     key    = "scripts/${var.py_cleanup_filename}.zip"
@@ -589,7 +592,6 @@ module "lambda_ec2_cleanup" {
 ################################################################################
 module "sns_lambda_notification" {
   source = "terraform-aws-modules/sns/aws"
-
 
   name             = "lambda-notification"
   create_sns_topic = true
